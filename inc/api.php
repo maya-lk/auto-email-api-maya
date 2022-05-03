@@ -106,3 +106,48 @@ function aeam_order_status_change($token , $fname , $email , $orderID , $orderSt
     return json_decode($response);
 
 }
+
+function aeam_cart_abandonment_api ($token , $fname , $email , $orderID , $orderStatus , $deliveryStatus , $products , $phone){
+
+    $curl = curl_init();
+    $currentDate = date('m/d/Y');
+
+    curl_setopt_array($curl, array(
+    CURLOPT_URL => 'https://mcpdbpr80z7fl1y24g0hkqz9gb21.rest.marketingcloudapis.com/data/v1/async/dataextensions/key:4557451D-1179-403A-A1FB-A7C31D101760/rows',
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_ENCODING => '',
+    CURLOPT_MAXREDIRS => 10,
+    CURLOPT_TIMEOUT => 0,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+    CURLOPT_CUSTOMREQUEST => 'PUT',
+    CURLOPT_POSTFIELDS =>'{
+        "items": [
+            {
+                "FirstName": "'.$fname.'",
+                "Email": "'.$email.'",
+                "Cart": "'.$products.'",
+                "trackingId": "'.$orderID.'",
+                "OrderDispatchStatus": "'.$orderStatus.'",
+                "DeliveryStatus": "'.$deliveryStatus.'",
+                "OrderId":"#'.$orderID.'",
+                "ProductAddedToCartDate": "'.$currentDate.'",
+                "ProductInCart": "'.$products.'",
+                "OrderPlaceDate": "",
+                "Contact": "'.$phone.'"
+            }
+        ]
+    }',
+    CURLOPT_HTTPHEADER => array(
+        'Content-Type: application/json',
+        'Authorization: Bearer '.$token
+    ),
+    ));
+
+    $response = curl_exec($curl);
+
+    curl_close($curl);
+    
+    return json_decode($response);
+
+}

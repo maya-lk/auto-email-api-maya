@@ -41,8 +41,11 @@ function aeam_add_name_woo_account_registration() {
         <label for="reg_billing_last_name"><?php _e( 'Last name', 'woocommerce' ); ?> <span class="required">*</span></label>
         <input type="text" class="input-text form-control" name="billing_last_name" id="reg_billing_last_name" value="<?php if ( ! empty( $_POST['billing_last_name'] ) ) esc_attr_e( $_POST['billing_last_name'] ); ?>" />
     </p>
-  
-    <div class="clear"></div>
+
+    <p class="form-row form-row-first form-group">
+        <label for="reg_billing_phone"><?php _e( 'Mobile', 'woocommerce' ); ?> <span class="required">*</span></label>
+        <input type="text" class="input-text form-control" name="billing_phone" id="reg_billing_phone" value="<?php if ( ! empty( $_POST['billing_phone'] ) ) esc_attr_e( $_POST['billing_phone'] ); ?>" />
+    </p>
   
     <?php
 }
@@ -54,6 +57,10 @@ function aeam_validate_name_fields( $errors, $username, $email ) {
     }
     if ( isset( $_POST['billing_last_name'] ) && empty( $_POST['billing_last_name'] ) ) {
         $errors->add( 'billing_last_name_error', __( '<strong>Error</strong>: Last name is required!.', 'woocommerce' ) );
+    }
+
+    if ( isset( $_POST['billing_phone'] ) && empty( $_POST['billing_phone'] ) ) {
+        $errors->add( 'billing_phone_error', __( '<strong>Error</strong>: Mobile no is required!.', 'woocommerce' ) );
     }
     return $errors;
 }
@@ -67,6 +74,10 @@ function aeam_save_name_fields( $customer_id ) {
     if ( isset( $_POST['billing_last_name'] ) ) {
         update_user_meta( $customer_id, 'billing_last_name', sanitize_text_field( $_POST['billing_last_name'] ) );
         update_user_meta( $customer_id, 'last_name', sanitize_text_field($_POST['billing_last_name']) );
+    }
+
+    if ( isset( $_POST['billing_phone'] ) ) {
+        update_user_meta( $customer_id, 'billing_phone', sanitize_text_field( $_POST['billing_phone'] ) );
     }
   
 }

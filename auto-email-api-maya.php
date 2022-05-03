@@ -15,23 +15,28 @@ require_once 'inc/woo_config.php';
 add_action( 'user_register', 'aeam_user_registration', 10, 1 );
 function aeam_user_registration( $user_id ) {
 
-    error_log('==================== AUTO_EMAIL_API_REGISTER_USER ======================');
+    // LOAD THE WC LOGGER
+    $logger = wc_get_logger();
+    
+    // LOG THE FAILED ORDER TO CUSTOM "AUTO_EMAIL_API_REGISTER_USER" LOG
+    $logger->info( 'AUTO_EMAIL_API_REGISTER_USER', array( 'source' => 'AUTO_EMAIL_API_REGISTER_USER' ) );
 
     $access_token = aeam_get_access_token();
     $user_info = get_userdata($user_id);
     $firstName = ( isset($_POST['billing_first_name']) ) ? $_POST['billing_first_name'] : $user_info->first_name;
 
-    error_log('Access Token : '.$access_token);
-    error_log('User ID : '.$user_id);
-    error_log('User FName : '.$firstName);
-    error_log('User Email : '.$user_info->user_email);
+    $logger->info( 'Access Token : '.$access_token, array( 'source' => 'AUTO_EMAIL_API_REGISTER_USER' ) );
+    $logger->info( 'User ID : '.$user_id, array( 'source' => 'AUTO_EMAIL_API_REGISTER_USER' ) );
+    $logger->info( 'User FName : '.$firstName, array( 'source' => 'AUTO_EMAIL_API_REGISTER_USER' ) );
+    $logger->info( 'User Email : '.$user_info->user_email, array( 'source' => 'AUTO_EMAIL_API_REGISTER_USER' ) );
 
     $response = aeam_register_user($access_token , $firstName , $user_info->user_email);
 
     if( isset($response->requestId) ){
         update_user_meta($user_id, 'aeam_requestId', $response->requestId);
 
-        error_log('Response : '.$response->requestId);
+        $logger->info( 'Response : '.$response->requestId, array( 'source' => 'AUTO_EMAIL_API_REGISTER_USER' ) );
+        
     }
  
 }
@@ -40,7 +45,11 @@ function aeam_user_registration( $user_id ) {
 add_action('woocommerce_order_status_changed','aeam_woo_order_status_change', 10, 3);
 function aeam_woo_order_status_change( $order_id, $old_status, $new_status ){
 
-    error_log('==================== AUTO_EMAIL_API_ORDER_STATUS ======================');
+    // LOAD THE WC LOGGER
+    $logger = wc_get_logger();
+    
+    // LOG THE FAILED ORDER TO CUSTOM "AUTO_EMAIL_API_ORDER_STATUS" LOG
+    $logger->info( 'AUTO_EMAIL_API_ORDER_STATUS', array( 'source' => 'AUTO_EMAIL_API_ORDER_STATUS' ) );
 
     $access_token = aeam_get_access_token();
 
@@ -50,8 +59,8 @@ function aeam_woo_order_status_change( $order_id, $old_status, $new_status ){
     $email = $order->get_billing_email();
     $productsArr = array();
 
-    error_log('Access Token : '.$access_token);
-    error_log('Order ID : '.$order);
+    $logger->info( 'Access Token : '.$access_token, array( 'source' => 'AUTO_EMAIL_API_ORDER_STATUS' ) );
+    $logger->info( 'Order: '.wc_print_r( $order, true ), array( 'source' => 'AUTO_EMAIL_API_ORDER_STATUS' ) );
 
     // Get and Loop Over Order Items
     foreach ( $order->get_items() as $item_id => $item ) {
@@ -66,8 +75,9 @@ function aeam_woo_order_status_change( $order_id, $old_status, $new_status ){
     if( isset($response->requestId) ) {
         wc_update_order_item_meta($order_id,'aeam_woo_status_change_requestId',$response->requestId);
 
-        error_log('Response : '.$response->requestId);
+        $logger->info( 'Response : '.$response->requestId, array( 'source' => 'AUTO_EMAIL_API_ORDER_STATUS' ) );
     }
+    
 
 }
 
@@ -75,23 +85,27 @@ function aeam_woo_order_status_change( $order_id, $old_status, $new_status ){
 add_action( 'woocommerce_update_customer', 'aeam_customer_update', 10, 1 );
 function aeam_customer_update( $user_id ) {
 
-    error_log('==================== AUTO_EMAIL_API_UPDATE_USER ======================');
+    // LOAD THE WC LOGGER
+    $logger = wc_get_logger();
+    
+    // LOG THE FAILED ORDER TO CUSTOM "AUTO_EMAIL_API_UPDATE_USER" LOG
+    $logger->info( 'AUTO_EMAIL_API_UPDATE_USER', array( 'source' => 'AUTO_EMAIL_API_UPDATE_USER' ) );
 
     $access_token = aeam_get_access_token();
     $user_info = get_userdata($user_id);
     $firstName = get_user_meta($user_id,'billing_first_name',true);
 
-    error_log('Access Token : '.$access_token);
-    error_log('User ID : '.$user_id);
-    error_log('User FName : '.$user_info->first_name);
-    error_log('User Email : '.$user_info->user_email);
+    $logger->info( 'Access Token : '.$access_token, array( 'source' => 'AUTO_EMAIL_API_UPDATE_USER' ) );
+    $logger->info( 'User ID : '.$user_id, array( 'source' => 'AUTO_EMAIL_API_UPDATE_USER' ) );
+    $logger->info( 'User FName : '.$user_info->first_name, array( 'source' => 'AUTO_EMAIL_API_UPDATE_USER' ) );
+    $logger->info( 'User Email : '.$user_info->user_email, array( 'source' => 'AUTO_EMAIL_API_UPDATE_USER' ) );
 
     $response = aeam_register_user($access_token , $user_info->first_name , $user_info->user_email);
 
     if( isset($response->requestId) ){
         update_user_meta($user_id, 'aeam_requestId', $response->requestId);
-
-        error_log('Response : '.$response->requestId);
+        
+        $logger->info('Response : '.$response->requestId, array( 'source' => 'AUTO_EMAIL_API_UPDATE_USER' ) );
     }
  
 }
@@ -124,6 +138,8 @@ function get_all_abandoned_cart_registerd_users() {
         )
     );
 
+    
+
     if( $results ) {
         foreach( $results as $key => $value ) {
 
@@ -155,19 +171,45 @@ function get_all_abandoned_cart_registerd_users() {
                 $user_first_name = $user_first_name_temp;
             }
 
+            $user_billing_phone = get_user_meta( $user_id, 'billing_phone', true );
+
+            $itemData = array(
+                'user_email' => $user_email,
+                'user_first_name' => $user_first_name,
+                'user_billing_phone' => $user_billing_phone,
+            );
+
             $productName = array();
             if( isset($cart_info->cart) ) {
                 foreach( $cart_info->cart as $key => $value ) {
                     $product = wc_get_product( $value->product_id );
                     array_push($productName , $product->get_name());
+
+                    $itemData['cart_id'] = $value->data_hash;
                 }
             }
 
-            $itemData = array(
-                'user_email' => $user_email,
-                'user_first_name' => $user_first_name,
-                'cart_info' => implode(" , ",$productName)
-            );
+            $cart_details = new stdClass();
+			if ( isset( $cart_info->cart ) ) {
+				$cart_details = $cart_info->cart;
+			}
+			$line_total = 0;
+
+			if ( count( get_object_vars( $cart_details ) ) > 0 ) {
+				foreach ( $cart_details as $k => $v ) {
+					if ( isset( $v->line_tax, $v->line_total ) && $v->line_tax > 0 && $v->line_tax > 0 ) {
+						$line_total = $line_total + $v->line_total + $v->line_tax;
+					} elseif ( isset( $v->line_total ) ) {
+						$line_total = $line_total + $v->line_total;
+					}
+				}
+			}
+
+            $hash  = $cart_info->cart ? md5( wp_json_encode( $cart_info->cart ) . number_format($line_total , 2) ) : '';
+
+            $itemData['cart_info'] = implode(" , ",$productName);
+            $itemData['line_total'] = number_format($line_total , 2);
+            $itemData['hash'] = $hash;
 
             array_push($userData , $itemData);
         }
@@ -180,28 +222,35 @@ function get_all_abandoned_cart_registerd_users() {
 //Create Request IDs for Abandoned Carts
 function aeam_user_abandoned_carts() {
 
-    error_log('==================== AUTO_EMAIL_API_ABANDONED_CARTS ======================');
+    // LOAD THE WC LOGGER
+    $logger = wc_get_logger();
+    
+    // LOG THE FAILED ORDER TO CUSTOM "ABANDONED_CARTS" LOG
+    $logger->info( 'ABANDONED_CARTS', array( 'source' => 'ABANDONED_CARTS' ) );
 
     $access_token = aeam_get_access_token();
-
-    error_log('Access Token : '.$access_token);
-
     $abandonedCarts = get_all_abandoned_cart_registerd_users();
+
+    $logger->info( 'Access Token : '.$access_token, array( 'source' => 'ABANDONED_CARTS' ) );
+    $logger->info( 'abandonedCarts : '.wc_print_r( $abandonedCarts, true ), array( 'source' => 'ABANDONED_CARTS' ) );
 
     if( $abandonedCarts ) {
         foreach ( $abandonedCarts as $cart ) {
 
             $fname = $cart['user_first_name'];
             $email = $cart['user_email'];
+            $phone = $cart['user_billing_phone'];
             $products = $cart['cart_info'];
             $order_id = '';
             $new_status = '';
 
             //Send API Request
-            $response = aeam_order_status_change($access_token , $fname , $email , $order_id , $new_status , $new_status , $products);
+            $response = aeam_cart_abandonment_api($access_token , $fname , $email , $order_id , $new_status , $new_status , $products , $phone);
+
+            $logger->info( 'Response : '.wc_print_r( $response, true ), array( 'source' => 'ABANDONED_CARTS' ) );
 
             if( isset($response->requestId) ) {
-                error_log('Response : '.$response->requestId);
+                
             }
 
         }
@@ -213,4 +262,56 @@ function aeam_user_abandoned_carts() {
 add_action( 'aeam_abandoned_cart_cron', 'aeam_abandoned_cart_cron_func' );
 function aeam_abandoned_cart_cron_func() {
     aeam_user_abandoned_carts();
+}
+
+add_action('rest_api_init', function () {
+    register_rest_route( 'aeam/v1', 'abandoned-carts',array(
+        'methods'  => 'GET',
+        'callback' => 'abandoned_cart_trigger_action'
+    ));
+});
+
+function abandoned_cart_trigger_action() {
+    //aeam_user_abandoned_carts();
+
+    // LOAD THE WC LOGGER
+    $logger = wc_get_logger();
+    
+    // LOG THE FAILED ORDER TO CUSTOM "ABANDONED_CARTS_MANUAL" LOG
+    $logger->info( 'ABANDONED_CARTS_MANUAL', array( 'source' => 'ABANDONED_CARTS_MANUAL' ) );
+
+    $access_token = aeam_get_access_token();
+    $abandonedCarts = get_all_abandoned_cart_registerd_users();
+
+    //$logger->info( 'Access Token : '.$access_token, array( 'source' => 'ABANDONED_CARTS_MANUAL' ) );
+    $logger->info( 'abandonedCarts : '.wc_print_r( $abandonedCarts, true ), array( 'source' => 'ABANDONED_CARTS_MANUAL' ) );
+
+    $responseAPI = 'Abandoned Carts are not found.';
+
+    if( $abandonedCarts ) {
+        foreach ( $abandonedCarts as $cart ) {
+
+            $fname = $cart['user_first_name'];
+            $email = $cart['user_email'];
+            $phone = $cart['user_billing_phone'];
+            $products = $cart['cart_info'];
+            $order_id = '';
+            $new_status = '';
+
+            //Send API Request
+            $responseAPI = aeam_cart_abandonment_api($access_token , $fname , $email , $order_id , $new_status , $new_status , $products , $phone);
+
+            $logger->info( 'Response : '.wc_print_r( $response, true ), array( 'source' => 'ABANDONED_CARTS_MANUAL' ) );
+
+            if( isset($responseAPI->requestId) ) {
+                
+            }
+
+        }
+    }
+
+    $response = new WP_REST_Response($responseAPI);
+    $response->set_status(200);
+
+    return $response;
 }
